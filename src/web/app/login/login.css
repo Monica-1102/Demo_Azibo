@@ -1,0 +1,42 @@
+.lg-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80px 16px 40px;
+  background: radial-gradient(circle at 50% 0%, #eef3fb 0, #f8f9fc 45%, #fafbfd 100%);
+  font-family: Manrope, 'Segoe UI', Arial, sans-serif;
+}
+.lg-logo { width: 240px; max-width: 70vw; margin-bottom: 18px; }
+.lg-card {
+  width: 100%;
+  max-width: 434px;
+  background: #fff;
+  border: 1px solid #e6e8ee;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+  padding: 28px 18px 22px;
+  box-sizing: border-box;
+}
+.lg-tabs { display: grid; grid-template-columns: repeat(3, 1fr); background: #eef0f2; border-radius: 6px; padding: 4px; }
+.lg-tabs button { border: 0; background: transparent; padding: 7px 0; font-weight: 700; color: #6b7280; font-family: inherit; border-radius: 5px; }
+.lg-tabs button.active { background: #fff; color: #0b1437; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); }
+.lg-head { display: flex; gap: 12px; margin: 26px 0 18px; }
+.lg-head h1 { font-size: 17px; margin: 2px 0 4px; color: #0b1437; }
+.lg-head p { margin: 0; font-size: 13px; color: #6b7280; line-height: 1.5; }
+.lg-icon {
+  flex: 0 0 48px; height: 48px; display: grid; place-items: center;
+  border: 1px solid #eceef2; border-radius: 10px; color: #f59e0b; font-size: 18px; box-shadow: 0 2px 6px rgba(0,0,0,.05);
+}
+.lg-error { color: #e00; text-align: center; font-size: 13px; font-weight: 600; margin: 4px 0 14px; }
+.lg-card label { display: block; font-size: 13px; font-weight: 700; color: #0b1437; margin: 14px 0 8px; }
+.lg-field {
+  display: flex; align-items: center; gap: 10px; border: 1px solid #d5d9e0; border-radius: 3px; padding: 0 12px; height: 40px; color: #6b7280;
+}
+.lg-field:focus-within { border-color: #022b61; box-shadow: 0 0 0 2px rgba(2, 43, 97, 0.12); }
+.lg-field input { flex: 1; border: 0; outline: 0; font: 13px inherit; font-family: inherit; color: #111; background: transparent; min-width: 0; }
+.lg-eye { border: 0; background: transparent; color: #6b7280; cursor: pointer; padding: 4px; }
+.lg-submit {
+  width: 100%; margin-top: 26px; height: 40px; border: 0; border-radius: 3px; cursor: pointer;
+  background: #020f3a; color: #fff; font-weight: 700; font-family: inherit; font-size: 14px; box-shadow: 0 8px 16px rgba(2, 15, 58, 0.25);
+}
+.lg-submit:disabled { opacity: 0.7; cursor: default; }

@@ -1,0 +1,262 @@
+// Jigmesoft demo schema (PostgreSQL).
+// New tables only: this demo never reads the current MySQL data.
+// Every company-owned table carries company_id and is protected by row-level
+// security (see migrations/*_rls). Names are snake_case in the database.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Migrations run as the owner role; the app connects as a role that RLS applies to.
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+/// A subscriber company. `prefix` goes into the ISR / IOR code (as companyprefix does today).
+model Company {
+  id        Int      @id @default(autoincrement())
+  name      String
+  prefix    String   @db.VarChar(10)
+  // Shown in the order header box, as in workinprocess/order_processing_edit.php
+  address   String?
+  city      String?
+  pincode   String?
+  state     String?
+  country   String?
+  gstNo     String?  @map("gst_no")
+  ieCode    String?  @map("ie_code")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  users     User[]
+  buyers    Buyer[]
+  brands    Brand[]
+  enquiries Enquiry[]
+
+  @@map("companies")
+}
+
+/// user_type follows the current ARRUSERTYPE values: 1 User Admin, 2 Management,
+/// 3 Merchandising Dept., 4 CAD Dept., ...
+model User {
+  id           Int      @id @default(autoincrement())
+  companyId    Int      @map("company_id")
+  username     String   @unique
+  passwordHash String   @map("password_hash")
+  fullName     String   @map("full_name")
+  /// Merch. Code / Contact No / e-mail ID in the order header
+  code         String?
+  mobile       String?
+  email        String?
+  userType     Int      @map("user_type")
+  /// System users (e.g. the fixed demo authorizer) cannot sign in.
+  canLogin     Boolean  @default(true) @map("can_login")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  company             Company   @relation(fields: [companyId], references: [id])
+  merchantEnquiries   Enquiry[] @relation("EnquiryMerchant")
+  authorizedEnquiries Enquiry[] @relation("EnquiryAuthorizer")
+
+  @@index([companyId])
+  @@map("users")
+}
+
+model Buyer {
+  id        Int     @id @default(autoincrement())
+  companyId Int     @map("company_id")
+  name      String
+  country   String
+  isActive  Boolean @default(true) @map("is_active")
+
+  company   Company   @relation(fields: [companyId], references: [id])
+  brands    Brand[]
+  enquiries Enquiry[]
+
+  @@unique([companyId, name])
+  @@map("buyers")
+}
+
+model Brand {
+  id        Int     @id @default(autoincrement())
+  companyId Int     @map("company_id")
+  buyerId   Int     @map("buyer_id")
+  name      String
+  isActive  Boolean @default(true) @map("is_active")
+
+  company   Company   @relation(fields: [companyId], references: [id])
+  buyer     Buyer     @relation(fields: [buyerId], references: [id])
+  enquiries Enquiry[]
+
+  @@unique([companyId, name])
+  @@map("brands")
+}
+
+/// The order hub record. Status values match ORDERENQUIRYSTATUS:
+/// 0 '-' (new), 1 PENDING, 2 APPROVED, 3 DECLINED.
+model Enquiry {
+  id             Int       @id @default(autoincrement())
+  companyId      Int       @map("company_id")
+  merchantId     Int       @map("merchant_id")
+  /// Typed by the merchant ("Order / Enq. Ref. No"), unique per company.
+  enquiryRefNo   String    @map("enquiry_ref_no")
+  /// 1 Development, 2 Order Confirmation, 3 P.O. Received (ARRENQUIRYTYPE)
+  enquiryType    Int       @map("enquiry_type")
+  /// MODE_OF_ENQUIRY in src/shared/constants.ts
+  modeOfEnquiry  Int       @default(1) @map("mode_of_enquiry")
+  noOfComponents Int       @default(1) @map("no_of_components")
+  noOfCombo      Int       @default(1) @map("no_of_combo")
+  /// 1 CIF, 2 C & F, 3 FOB (PRICEQUOTEDFOR)
+  priceQuotedFor Int       @default(3) @map("price_quoted_for")
+  buyerPrice     Decimal?  @map("buyer_price") @db.Decimal(14, 4)
+  confirmPrice   Decimal?  @map("confirm_price") @db.Decimal(14, 4)
+  isrRefAny      String?   @map("isr_ref_any")
+  /// ORDER DETAILS block of the WIP page (saved with its UPDATE button)
+  season         String?
+  className      String?   @map("class_name")
+  diviDept       String?   @map("divi_dept")
+  subClass       String?   @map("sub_class")
+  /// Remarks under the order-entry Combo / Colour sub-tab
+  oeRemarks      String?   @map("oe_remarks")
+  /// 1 ISR, 2 IOR (ARRISRIOR)
+  reqForIsrIor   Int       @map("req_for_isr_ior")
+  buyerId        Int       @map("buyer_id")
+  brandId        Int       @map("brand_id")
+  styleRefNo     String    @map("style_ref_no")
+  styleDesc      String?   @map("style_desc")
+  orderQty       Int       @map("order_qty")
+  /// 1 Pcs., 2 Set (ARRPCSSET)
+  pcsOrSet       Int       @map("pcs_or_set")
+  sizes          String[]
+  currency       String    @db.VarChar(3)
+  quotedPrice    Decimal?  @map("quoted_price") @db.Decimal(14, 4)
+  enquiryDate    DateTime  @map("enquiry_date") @db.Date
+  shipmentDate   DateTime  @map("shipment_date") @db.Date
+  merchantNote   String?   @map("merchant_note")
+  orderStatus    Int       @default(0) @map("order_status")
+  isrIorNo       Int?      @map("isr_ior_no")
+  isrIorCode     String?   @map("isr_ior_code")
+  dateAuthorized DateTime? @map("date_authorized")
+  authorizedById Int?      @map("authorized_by_id")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  createdById    Int       @map("created_by")
+
+  company      Company            @relation(fields: [companyId], references: [id])
+  merchant     User               @relation("EnquiryMerchant", fields: [merchantId], references: [id])
+  authorizedBy User?              @relation("EnquiryAuthorizer", fields: [authorizedById], references: [id])
+  buyer        Buyer              @relation(fields: [buyerId], references: [id])
+  brand       Brand               @relation(fields: [brandId], references: [id])
+  preCosting  PreCosting?
+  statusLogs  EnquiryStatusLog[]
+  sheets      OrderEntrySheet[]
+  cad         CadRequirement?
+
+  @@unique([companyId, enquiryRefNo])
+  @@unique([companyId, isrIorCode])
+  @@index([companyId, merchantId, orderStatus])
+  @@map("enquiries")
+}
+
+/// Status history (the current kn_order_enquiry_log trail).
+model EnquiryStatusLog {
+  id          Int      @id @default(autoincrement())
+  companyId   Int      @map("company_id")
+  enquiryId   Int      @map("enquiry_id")
+  orderStatus Int      @map("order_status")
+  statusValue String   @map("status_value")
+  isrIorCode  String?  @map("isr_ior_code")
+  comments    String?
+  actedById   Int      @map("acted_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  enquiry Enquiry @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, enquiryId])
+  @@map("enquiry_status_logs")
+}
+
+/// Next ISR / IOR number per company and fiscal year (April to March).
+model OrderCodeCounter {
+  companyId  Int @map("company_id")
+  fiscalYear Int @map("fiscal_year")
+  lastNo     Int @default(0) @map("last_no")
+
+  @@id([companyId, fiscalYear])
+  @@map("order_code_counters")
+}
+
+/// Reduced pre-costing: one component, a few cost lines and a total.
+model PreCosting {
+  id          Int      @id @default(autoincrement())
+  companyId   Int      @map("company_id")
+  enquiryId   Int      @unique @map("enquiry_id")
+  component   String
+  currency    String   @db.VarChar(3)
+  totalCost   Decimal  @map("total_cost") @db.Decimal(14, 4)
+  remarks     String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdById Int      @map("created_by")
+  updatedById Int      @map("updated_by")
+
+  enquiry Enquiry          @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+  lines   PreCostingLine[]
+
+  @@index([companyId])
+  @@map("pre_costings")
+}
+
+model PreCostingLine {
+  id           Int     @id @default(autoincrement())
+  companyId    Int     @map("company_id")
+  preCostingId Int     @map("pre_costing_id")
+  lineNo       Int     @map("line_no")
+  costHead     String  @map("cost_head")
+  description  String?
+  uom          String
+  consumption  Decimal @db.Decimal(14, 4)
+  rate         Decimal @db.Decimal(14, 4)
+  amount       Decimal @db.Decimal(14, 4)
+
+  preCosting PreCosting @relation(fields: [preCostingId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, preCostingId])
+  @@map("pre_costing_lines")
+}
+
+/// One record set per order-entry sub-tab. `rows` is validated with the
+/// shared Zod schema of that sub-tab before it is stored.
+model OrderEntrySheet {
+  id          Int      @id @default(autoincrement())
+  companyId   Int      @map("company_id")
+  enquiryId   Int      @map("enquiry_id")
+  /// combo_colour | po_size | component_intake | po_delivery | process_flow
+  subTab      String   @map("sub_tab")
+  rows        Json     @db.JsonB
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  updatedById Int      @map("updated_by")
+
+  enquiry Enquiry @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+
+  @@unique([enquiryId, subTab])
+  @@index([companyId])
+  @@map("order_entry_sheets")
+}
+
+/// CAD tab: CAD Requirement Details grid + remarks. No CAD request is raised.
+model CadRequirement {
+  id          Int      @id @default(autoincrement())
+  companyId   Int      @map("company_id")
+  enquiryId   Int      @unique @map("enquiry_id")
+  rows        Json     @db.JsonB
+  remarks     String?
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  updatedById Int      @map("updated_by")
+
+  enquiry Enquiry @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("cad_requirements")
+}
