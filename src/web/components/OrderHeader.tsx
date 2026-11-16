@@ -99,7 +99,7 @@ export function OrderHeader({ order, id }: { order: OrderPage; id: number }) {
                   ? <input className="inp-full-wd" aria-label="Total Order Qty." inputMode="numeric" placeholder="Free Text" value={form.orderQty} onChange={set('orderQty')} />
                   : e.orderQty}
               </td>
-              <td className="process-title">UOM</td>
+              <td className="process-title uom-title">UOM</td>
               <td className="process-value pad-0">
                 {canEdit ? (
                   <select className="inp-full-wd" aria-label="UOM" value={form.pcsOrSet} onChange={(ev) => setForm((f) => ({ ...f, pcsOrSet: Number(ev.target.value) }))}>

@@ -6,3 +6,7 @@ dist/
 .pgdata/
 .env
 *.log
+.vercel/
+walkthrough-screens/
+.env.*
+!.env.example

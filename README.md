@@ -39,6 +39,56 @@ NestJS then serves the screens and the API on http://127.0.0.1:4000.
 otherwise row-level security does not apply to it. The RLS migration grants it data access if it is named
 `azibo_app`.
 
+## Deploy to Vercel
+
+On Vercel the same code runs in two parts:
+
+| Part | Where on Vercel | Files |
+|------|-----------------|-------|
+| Screens (Next.js static export) | Vercel CDN, from `src/web/out` | `vercel.json` → `outputDirectory` |
+| API (NestJS, all of `/api/*`) | One serverless function | `api/index.js` → `src/server/serverless.ts` (compiled to `dist/` by `npm run vercel-build`) |
+| Database | **Hosted PostgreSQL** (Vercel cannot run one) | Neon (Vercel Marketplace), Supabase, RDS… |
+
+### 1. Create the database (once)
+
+1. Create a PostgreSQL database (e.g. Neon from the Vercel Marketplace, region close to Mumbai / Singapore).
+2. Note two connection strings:
+   - **Owner, direct** (no pooler) → `DIRECT_DATABASE_URL`. Used only for migrations, the role script and the seed.
+   - **App role, pooled** → `DATABASE_URL`. Same host but the *pooled* endpoint, user `azibo_app` with a new strong
+     password, and `?pgbouncer=true&connection_limit=1&sslmode=require` at the end. Serverless functions open many
+     short connections, so the pooled endpoint is needed.
+3. From this machine, with those two values (and a strong `DEMO_PASSWORD`) in your local `.env` temporarily:
+   ```bash
+   npm run db:deploy      # migrations (tables + row-level security), app role + grants, demo data
+   ```
+   `db:deploy` refuses to run if `DATABASE_URL` uses the owner role, because row-level security would not apply.
+   Put your local `.env` back afterwards.
+
+### 2. Create the Vercel project
+
+1. Push this repository to GitHub/GitLab and import it in Vercel (or run `vercel` from this folder).
+   Leave Framework Preset as **Other**; `vercel.json` sets the install, build and output settings.
+2. Environment variables (Project → Settings → Environment Variables, Production):
+
+   | Name | Value |
+   |------|-------|
+   | `DATABASE_URL` | pooled app-role URL from step 1 |
+   | `DIRECT_DATABASE_URL` | direct owner URL (Prisma needs it to load the schema) |
+   | `JWT_SECRET` | a new random value: `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"` |
+   | `JWT_TTL_MINUTES` | `480` |
+
+   Do not set `PORT` or `DEMO_PASSWORD` on Vercel.
+3. Deploy. Check `https://<your-app>.vercel.app/api/health` → `{"status":"ok"}`, then sign in at `/login/`.
+
+### Notes for live use
+
+- **Migrations are not run by the Vercel build.** For each new migration, run `npm run db:deploy` (or just
+  `npx prisma migrate deploy`) against the database before deploying the code that needs it.
+- Session cookies are `Secure`, `HttpOnly`, `SameSite=Strict` in production (HTTPS only).
+- The login rate limit is kept in memory, so on Vercel it applies per function instance only.
+- The first request after a quiet period starts a new function instance (a "cold start" of a second or two).
+- `npm run build && npm start` (one server, as in the migration proposal) still works unchanged.
+
 ### Demo users (password = `DEMO_PASSWORD` in `.env`)
 
 | User | Company | Type | Can do |

@@ -30,7 +30,8 @@ class HealthController {
 @Module({
   imports: [
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 300 }]),
-    ...(existsSync(WEB_OUT)
+    // On Vercel the screens are served by Vercel itself, not by this function.
+    ...(existsSync(WEB_OUT) && !process.env.VERCEL
       ? [ServeStaticModule.forRoot({ rootPath: WEB_OUT, exclude: ['/api/{*path}'], serveStaticOptions: { extensions: ['html'] } })]
       : []),
     DbModule,

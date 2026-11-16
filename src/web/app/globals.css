@@ -210,6 +210,8 @@ body {
 .tbl-procs td { border-top: 1px solid #ddd; padding: 8px; font-size: 13px; vertical-align: middle; }
 .tbl-procs td.process-title { background: #f3f3f3; text-align: right; width: 40%; }
 .tbl-procs td.process-title.detail-title { width: 21%; }
+.tbl-procs td.process-title.uom-title { width: 1%; white-space: nowrap; }
+.tbl-procs select.inp-full-wd { min-width: 64px; padding: 0 6px; }
 .tbl-procs td.process-main-head { background: var(--jg-navy); color: #fff; text-align: center; }
 .tbl-procs td.process-main-value b { font-size: 15px; }
 .tbl-procs td.pad-0 { padding: 0; }

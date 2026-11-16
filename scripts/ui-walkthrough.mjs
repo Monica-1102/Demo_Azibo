@@ -65,7 +65,8 @@ async function addRow() {
 }
 async function saveTab() {
   await page.waitForTimeout(300);
-  await pane().getByRole('button', { name: 'SAVE' }).click();
+  // The first SAVE is the grid's (sub-tab 1 has a second one for Remarks).
+  await pane().getByRole('button', { name: 'SAVE' }).first().click();
   await page.locator('.ant-message-notice', { hasText: 'Saved Successfully' }).last().waitFor({ timeout: 10_000 });
   await page.waitForTimeout(800);
 }

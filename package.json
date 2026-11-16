@@ -16,6 +16,9 @@
     "build:server": "nest build",
     "build:web": "next build src/web",
     "build": "prisma generate && npm run build:web && npm run build:server",
+    "vercel-build": "prisma generate && npm run build:web && npm run build:server",
+    "db:app-role": "node scripts/db-app-role.mjs",
+    "db:deploy": "prisma migrate deploy && node scripts/db-app-role.mjs && tsx prisma/seed.ts",
     "start": "node dist/server/main.js",
     "typecheck": "tsc -p tsconfig.server.json --noEmit && tsc -p src/web/tsconfig.json --noEmit",
     "postinstall": "prisma generate"
@@ -24,7 +27,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "engines": {
-    "node": ">=20"
+    "node": "24.x"
   },
   "dependencies": {
     "@ant-design/icons": "^5.6.1",

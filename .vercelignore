@@ -1,0 +1,10 @@
+node_modules/
+.pgdata/
+.env
+.env.*
+!.env.example
+dist/
+src/web/.next/
+src/web/out/
+walkthrough-screens/
+*.log

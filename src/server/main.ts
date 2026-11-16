@@ -1,33 +1,13 @@
+// Long-running server: local development and single-server hosting.
+// On Vercel the same app runs as a serverless function instead (see serverless.ts).
 import 'dotenv/config';
-import 'reflect-metadata';
 import { Logger } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
-import type { NestExpressApplication } from '@nestjs/platform-express';
-import cookieParser from 'cookie-parser';
-import helmet from 'helmet';
-import { AppModule, WEB_OUT } from './app.module';
 import { existsSync } from 'node:fs';
+import { WEB_OUT } from './app.module';
+import { createApp } from './bootstrap';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: false });
-  app.setGlobalPrefix('api');
-  app.disable('x-powered-by');
-  app.use(
-    helmet({
-      // The exported Next.js pages use inline bootstrap scripts and antd inline styles.
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: ["'self'"],
-          scriptSrc: ["'self'", "'unsafe-inline'"],
-          styleSrc: ["'self'", "'unsafe-inline'"],
-          imgSrc: ["'self'", 'data:'],
-          connectSrc: ["'self'"],
-          frameAncestors: ["'none'"],
-        },
-      },
-    }),
-  );
-  app.use(cookieParser());
+  const app = await createApp();
   app.enableShutdownHooks();
 
   const port = Number(process.env.PORT ?? 4000);
