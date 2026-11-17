@@ -10,3 +10,6 @@ dist/
 walkthrough-screens/
 .env.*
 !.env.example
+
+.vercel
+.env*
